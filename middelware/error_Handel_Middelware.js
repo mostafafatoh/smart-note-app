@@ -1,13 +1,15 @@
 const Apierror = require("../utiles/apierror");
-
 const send_in_dev_mode = (err, res) => {
-  res.status(err.statusCode).json({
-    status: err.status,
-    error: err,
+  const statusCode = err.statusCode || 500;
+  const status = err.status || "error";
+
+  res.status(statusCode).json({
+    status,
     message: err.message,
     stack: err.stack,
   });
 };
+
 
 const send_in_prod_mode = (err, res) => {
   // operational errors only

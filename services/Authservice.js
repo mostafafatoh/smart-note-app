@@ -8,7 +8,34 @@ const privateKey = fs.readFileSync("./keys/private.key", "utf8");
 const publicKey = fs.readFileSync("./keys/public.key", "utf8");
 const ApiError = require("../utiles/apierror");
 const SendEmail = require("../utiles/SendEmail");
-createtoken = (payload) => {
+const multer = require("multer");
+const { v4: uuidv4 } = require("uuid");
+const Apierror = require("../utiles/apierror");
+
+const MulterStorge = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "uploads/User");
+  },
+  filename: function (req, file, cb) {
+    const ext = file.mimetype.split("/")[1];
+    const filename = `ProfileImage-${uuidv4()}-${Date.now()}.${ext}`;
+    cb(null, filename);
+    req.body.profileimage = filename;
+  },
+});
+
+const MulterFilter = function fileFilter(req, file, cb) {
+  if (file.mimetype.startsWith("image")) {
+    cb(null, true);
+  } else {
+    cb(new Apierror(`Only allowed images`, 404), false);
+  }
+};
+const upload = multer({ storage: MulterStorge, fileFilter: MulterFilter });
+
+exports.UploadProfileImageupload = upload.single("profileimage");
+
+const createtoken = (payload) => {
   return jwt.sign({ userId: payload }, privateKey, {
     algorithm: "RS256",
     expiresIn: process.env.EXPIRE_TIME,
@@ -19,6 +46,7 @@ exports.register = asyncHandler(async (req, res, next) => {
     name: req.body.name,
     email: req.body.email,
     password: req.body.password,
+    profileimage: req.body.profileimage,
   });
 
   const token = createtoken(user.id);
@@ -78,9 +106,7 @@ exports.protect = asyncHandler(async (req, res, next) => {
   //3-check if user exist
   const currentuser = await User.findById(decoded.userId);
   if (!currentuser) {
-    return next(
-      new ApiError('This user no longer belongs to this token", 401')
-    );
+    return next(new ApiError("This user no longer belongs to this token", 401));
   }
   //4-check if user changed  his password after created(token)
 
@@ -188,4 +214,26 @@ exports.resetpassword = asyncHandler(async (req, res, next) => {
   //generate new token
   const token = createtoken(user.id);
   res.status(200).json({ token });
+});
+
+exports.UpdateProfileImage = asyncHandler(async (req, res, next) => {
+  if (!req.file) {
+    return next(new ApiError(`no Image upload`, 400));
+  }
+  const user = await User.findByIdAndUpdate(
+    req.user.id,
+    {
+      profileimage: req.body.profileimage,
+    },
+    { new: true }
+  );
+  res.status(200).json({
+    status: "success",
+    data: {
+      id: user.id,
+      name: user.name,
+      profileimage: user.profileimage,
+      email: user.email,
+    },
+  });
 });
