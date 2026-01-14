@@ -3,3 +3,9 @@ node_modules/
 config.env
 
 uploads
+
+package-lock.json
+
+private.key
+
+public.key

@@ -8,6 +8,7 @@ const {
   UploadProfileImageupload,
   UpdateProfileImage,
   protect,
+  logout,
 } = require("../services/Authservice.js");
 const {
   registervalditor,
@@ -27,5 +28,6 @@ router.patch(
   UploadProfileImageupload,
   UpdateProfileImage
 );
+router.post("/logout",protect,logout)
 
 module.exports = router;

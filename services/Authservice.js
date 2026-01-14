@@ -11,6 +11,7 @@ const SendEmail = require("../utiles/SendEmail");
 const multer = require("multer");
 const { v4: uuidv4 } = require("uuid");
 const Apierror = require("../utiles/apierror");
+const { SanitizeUser } = require("../utiles/SanitizeData");
 
 const MulterStorge = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -51,12 +52,7 @@ exports.register = asyncHandler(async (req, res, next) => {
 
   const token = createtoken(user.id);
   res.status(201).json({
-    data: {
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      profileimage: user.profileimage,
-    },
+    data: SanitizeUser(user),
     token,
   });
 });
@@ -74,11 +70,7 @@ exports.login = asyncHandler(async (req, res, next) => {
   const token = createtoken(user.id);
   //send response to client side
   res.status(200).json({
-    data: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-    },
+    data: SanitizeUser(user),
     token,
   });
 });
@@ -101,6 +93,10 @@ exports.protect = asyncHandler(async (req, res, next) => {
       )
     );
   }
+
+  if (revokedTokens.includes(token))
+    return next(new ApiError("Token has been revoked, login again", 401));
+
   //2- verfiy token
   const decoded = jwt.verify(token, publicKey);
   //3-check if user exist
@@ -214,6 +210,18 @@ exports.resetpassword = asyncHandler(async (req, res, next) => {
   //generate new token
   const token = createtoken(user.id);
   res.status(200).json({ token });
+});
+
+let revokedTokens = [];
+
+exports.logout = asyncHandler(async (req, res, next) => {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) return next(new ApiError("No token provided", 400));
+
+  revokedTokens.push(token); // خزنه مؤقتًا
+  res
+    .status(200)
+    .json({ status: "success", message: "Logged out successfully" });
 });
 
 exports.UpdateProfileImage = asyncHandler(async (req, res, next) => {

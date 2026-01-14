@@ -7,6 +7,7 @@ exports.registervalditor = [
   check("name")
     .notEmpty()
     .withMessage("name is required")
+    .bail()
     .isLength({ min: 3 })
     .withMessage("too short name")
     .custom((val, { req }) => {
@@ -16,6 +17,7 @@ exports.registervalditor = [
   check("email")
     .notEmpty()
     .withMessage("email is required")
+    .bail()
     .isEmail()
     .withMessage("invalid email address")
     .custom((val) => {
@@ -28,6 +30,7 @@ exports.registervalditor = [
   check("password")
     .notEmpty()
     .withMessage("password is required")
+    .bail()
     .isLength({ min: 6 })
     .withMessage("too short password must be at least 6")
     .custom((password, { req }) => {
@@ -46,11 +49,13 @@ exports.loginvalditor = [
   check("email")
     .notEmpty()
     .withMessage("email is required")
+    .bail()
     .isEmail()
     .withMessage("invalid email address"),
   check("password")
     .notEmpty()
     .withMessage("password is required")
+    .bail()
     .isLength({ min: 6 })
     .withMessage("too short password must be at least 6"),
   valditorMiddelware,
